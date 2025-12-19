@@ -57,3 +57,36 @@ uv run eda-cli report data/example.csv --out-dir reports
 ```bash
 uv run pytest -q
 ```
+### CLI функции:
+- `overview` – быстрый обзор датасета;
+
+```bash
+uv run eda-cli overview data/example.csv
+```
+
+- `report` – полный анализ с графиками и отчетами;
+
+```bash
+uv run eda-cli report data/example.csv --out-dir reports
+```
+
+### Новые параметры report
+
+- `--title` – заголовок отчёта (# ... в начале report.md);
+
+Даёт отчёту осмысленное имя
+
+- `--top-k-categories` – сколько top-значений выводить для категориальных признаков;
+
+Если уникальных значений много, отчёт становится компактнее и читабельнее
+
+- `--min-missing-share` – порог доли пропусков, выше которого колонка считается проблемной и попадает в отдельный список в отчёте;
+
+Добавляет в report.md новый список-предупреждение.
+```bash
+uv run eda-cli report data/example.csv \
+  --out-dir reports_2024 \
+  --title "Весёлый анализ весельчаков" \
+  --top-k-categories 3 \
+  --min-missing-share 0.1
+```

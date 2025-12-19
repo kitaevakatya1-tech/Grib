@@ -185,32 +185,59 @@ def compute_quality_flags(summary: DatasetSummary, missing_df: pd.DataFrame) -> 
     flags["max_missing_share"] = max_missing_share
     flags["too_many_missing"] = max_missing_share > 0.5
 
-    # флаг, показывающий, есть ли колонки, где все значения одинаковые.
-    flags["has_constant_columns"] = any(
-        summary.column_stats.get(col, {}).get("n_unique", 0) == 1
-        for col in summary.column_stats
-    )
+    # 1. Флаг: есть ли колонки, где все значения одинаковые
+    constant_columns = []
+    for col in summary.columns:
+        if col.unique == 1:
+            constant_columns.append(col.name)
+    flags["has_constant_columns"] = len(constant_columns) > 0
+    flags["constant_column_names"] = constant_columns
 
-    # проверка, что идентификатор (например, user_id) уникален; при наличии дубликатов выставлять флаг.
-    flags["has_suspicious_id_duplicates"] = any(
-        "id" in col_name.lower() and
-        stats.get("n_unique", 0) < summary.n_rows * 0.99  # менее 99% уникальности
-        for col_name, stats in summary.column_stats.items()
-    )
+    # 2. Флаг: ID-колонки с дубликатами
+    suspicious_id_cols = []
+    for col in summary.columns:
+        if "id" in col.name.lower() and col.unique < summary.n_rows * 0.99:
+            suspicious_id_cols.append(col.name)
+    flags["has_suspicious_id_duplicates"] = len(suspicious_id_cols) > 0
+    flags["suspicious_id_columns"] = suspicious_id_cols
 
-    # Простейший «скор» качества
+    # 3. НОВЫЙ: Категориальные признаки с высокой кардинальностью
+    high_cardinality_cols = []
+    for col in summary.columns:
+        if not col.is_numeric and col.unique > 100:  # Порог 100 уникальных значений
+            high_cardinality_cols.append(col.name)
+    flags["has_high_cardinality_categoricals"] = len(high_cardinality_cols) > 0
+    flags["high_cardinality_columns"] = high_cardinality_cols
+
+    # 4. НОВЫЙ: Колонки, где все значения пропущены
+    all_missing_cols = []
+    for col in summary.columns:
+        if col.missing == summary.n_rows:
+            all_missing_cols.append(col.name)
+    flags["has_all_missing_columns"] = len(all_missing_cols) > 0
+    flags["all_missing_columns"] = all_missing_cols
+
+    # Простейший «скор» качества с учетом новых флагов
     score = 1.0
     score -= max_missing_share  # чем больше пропусков, тем хуже
+
     if summary.n_rows < 100:
         score -= 0.2
     if summary.n_cols > 100:
         score -= 0.1
+    if flags.get("has_constant_columns"):
+        score -= 0.1
+    if flags.get("has_suspicious_id_duplicates"):
+        score -= 0.1
+    if flags.get("has_high_cardinality_categoricals"):
+        score -= 0.1
+    if flags.get("has_all_missing_columns"):
+        score -= 0.15
 
     score = max(0.0, min(1.0, score))
-    flags["quality_score"] = score
+    flags["quality_score"] = round(score, 3)
 
     return flags
-
 
 def flatten_summary_for_print(summary: DatasetSummary) -> pd.DataFrame:
     """
@@ -234,3 +261,6 @@ def flatten_summary_for_print(summary: DatasetSummary) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows)
+
+# df = pd.read_csv("/Users/katakitaeva/Desktop/DPO/Grib/homeworks/HW03/eda-cli/data/example.csv")
+# df2 = pd.read_csv("/Users/katakitaeva/Desktop/DPO/Grib/homeworks/HW02/S02-hw-dataset.csv")
