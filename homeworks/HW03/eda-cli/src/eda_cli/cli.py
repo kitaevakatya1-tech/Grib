@@ -110,12 +110,6 @@ def report(
         f.write(f"Исходный файл: `{Path(path).name}`\n\n")
         f.write(f"Строк: **{summary.n_rows}**, столбцов: **{summary.n_cols}**\n\n")
 
-        # ПАРАМЕТРЫ АНАЛИЗА (ДОБАВЬ ЭТОТ РАЗДЕЛ)
-        f.write("## Параметры анализа\n\n")
-        f.write(f"- Макс. гистограмм: **{max_hist_columns}**\n")
-        f.write(f"- Top-K категорий: **{top_k_categories}**\n")
-        f.write(f"- Порог пропусков: **{min_missing_share:.0%}**\n\n")
-
         f.write("## Качество данных (эвристики)\n\n")
         f.write(f"- Оценка качества: **{quality_flags['quality_score']:.2f}**\n")
         f.write(f"- Макс. доля пропусков по колонке: **{quality_flags['max_missing_share']:.2%}**\n")
@@ -123,12 +117,41 @@ def report(
         f.write(f"- Слишком много колонок: **{quality_flags['too_many_columns']}**\n")
         f.write(f"- Слишком много пропусков: **{quality_flags['too_many_missing']}**\n\n")
 
-        # КОЛОНКИ С ВЫСОКИМИ ПРОПУСКАМИ (ДОБАВЬ ЭТОТ КОД)
+        # ↓↓↓ ВСТАВЬ ЭТОТ БЛОК ТОЧНО ТАК ↓↓↓
+        f.write("### Детальные флаги качества\n\n")
+
+        if quality_flags.get('has_constant_columns'):
+            cols = quality_flags.get('constant_column_names', [])
+            f.write(f"- **Константные колонки**: {cols}\n")
+
+        if quality_flags.get('has_suspicious_id_duplicates'):
+            cols = quality_flags.get('suspicious_id_columns', [])
+            f.write(f"- **Подозрительные ID-колонки (дубликаты)**: {cols}\n")
+
+        if quality_flags.get('has_high_cardinality_categoricals'):
+            cols = quality_flags.get('high_cardinality_columns', [])
+            f.write(f"- **Высокая кардинальность (>100 уникальных)**: {cols}\n")
+
+        if quality_flags.get('has_all_missing_columns'):
+            cols = quality_flags.get('all_missing_columns', [])
+            f.write(f"- **Полностью пустые колонки**: {cols}\n")
+
+        f.write("\n")
+        # ↑↑↑ ВСТАВЬ ЭТОТ БЛОК ТОЧНО ТАК ↑↑↑
+
+        # КОЛОНКИ С ВЫСОКИМИ ПРОПУСКАМИ (этот код уже есть, оставь его)
         problem_missing_cols = []
         if not missing_df.empty:
             problem_missing_cols = missing_df[
                 missing_df["missing_share"] > min_missing_share
                 ].index.tolist()
+
+        if problem_missing_cols:
+            f.write(f"### Колонки с высокими пропусками (> {min_missing_share:.0%})\n\n")
+            for col in problem_missing_cols:
+                missing_pct = missing_df.loc[col, "missing_share"]
+                f.write(f"- **{col}**: {missing_pct:.1%} пропущено\n")
+            f.write("\n")
 
         if problem_missing_cols:
             f.write(f"###Колонки с высокими пропусками (> {min_missing_share:.0%})\n\n")
