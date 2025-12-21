@@ -1,0 +1,4 @@
+name,dtype,non_null,missing,missing_share,unique,is_numeric,min,max,mean,std
+user_id,int64,4,0,0.0,3,True,1.0,3.0,1.75,0.9574271077563381
+department,object,4,0,0.0,1,False,,,,
+category,object,4,0,0.0,4,False,,,,
