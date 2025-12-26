@@ -85,19 +85,19 @@ HTTP-сервис реализован в модуле `eda_cli.api` на FastAP
 ### Запуск Uvicorn
 
 ```bash
-uv run uvicorn eda_cli.api:app --reload --port 8000
+uv run uvicorn eda_cli.api:app --reload --port 8080
 ```
 
 Пояснения:
 
 - `eda_cli.api:app` - путь до объекта FastAPI `app` в модуле `eda_cli.api`;
 - `--reload` - автоматический перезапуск сервера при изменении кода (удобно для разработки);
-- `--port 8000` - порт сервиса (можно поменять при необходимости).
+- `--port 8080` - порт сервиса (можно поменять при необходимости).
 
 После запуска сервис будет доступен по адресу:
 
 ```text
-http://127.0.0.1:8000
+http://127.0.0.1:8080
 ```
 
 ---
@@ -127,7 +127,7 @@ GET /health
 Пример проверки через `curl`:
 
 ```bash
-curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8080/health
 ```
 
 ---
@@ -137,7 +137,7 @@ curl http://127.0.0.1:8000/health
 Интерфейс документации и тестирования API:
 
 ```text
-http://127.0.0.1:8000/docs
+http://127.0.0.1:8080/docs
 ```
 
 Через `/docs` можно:
@@ -196,7 +196,7 @@ Content-Type: application/json
 **Пример вызова через `curl`:**
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/quality" \
+curl -X POST "http://127.0.0.1:8080/quality" \
   -H "Content-Type: application/json" \
   -d '{"n_rows": 10000, "n_cols": 12, "max_missing_share": 0.15, "numeric_cols": 8, "categorical_cols": 4}'
 ```
@@ -233,7 +233,7 @@ file: <CSV-файл>
 **Пример вызова через `curl` (Linux/macOS/WSL):**
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/quality-from-csv" \
+curl -X POST "http://127.0.0.1:8080/quality-from-csv" \
   -F "file=@data/example.csv"
 ```
 
@@ -246,6 +246,32 @@ curl -X POST "http://127.0.0.1:8000/quality-from-csv" \
 - `latency_ms` - время обработки запроса.
 
 ---
+
+### 5. `POST /quality-flags-from-csv` - полный набор флагов качества из CSV-файла
+
+Эндпоинт принимает CSV-файл и возвращает полный набор флагов качества.
+
+В отличие от `/quality-from-csv`:
+- Возвращает весь словарь флагов (не только булевы)
+- Включает все новые эвристики из HW03
+- Показывает детальную информацию по каждой проверке
+
+**Запрос:**
+
+```http
+POST /quality-flags-from-csv
+Content-Type: multipart/form-data
+file: <CSV-файл>
+```
+
+**Пример вызова через `curl` (Linux/macOS/WSL):**
+
+```bash
+curl -X POST "http://127.0.0.1:8080/quality-flags-from-csv" \
+  -F "file=@data/example.csv"
+```
+
+
 
 ## Структура проекта (упрощённо)
 
